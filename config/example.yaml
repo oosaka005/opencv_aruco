@@ -1,0 +1,11 @@
+camera:
+  base_url: "http://192.168.x.x:8000"
+  capture_resolution: [2304, 1296]
+
+markers:
+  dictionary: "DICT_4X4_50"
+  default_length_m: 0.040
+
+calibration:
+  directory: "calibration/local"
+
