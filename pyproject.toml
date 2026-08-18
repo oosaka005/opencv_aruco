@@ -3,9 +3,9 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "aruco-vision-api"
+name = "opencv-aruco"
 version = "0.1.0"
-description = "ArUco vision and coordinate transformation API"
+description = "OpenCV ArUco detection, calibration, and pose estimation"
 readme = "README.md"
 requires-python = ">=3.11,<3.12"
 dependencies = [
@@ -31,4 +31,3 @@ testpaths = ["tests"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-
