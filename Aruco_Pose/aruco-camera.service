@@ -1,0 +1,47 @@
+# systemd unit for the Pi-side camera capture server.
+#
+# Layer 1 of resilience: if the server PROCESS dies (the "booted me out but SSH
+# still works" case), systemd relaunches it within ~5s. Combined with the hardware
+# watchdog (see SETUP below), a full kernel freeze also self-recovers via reboot,
+# after which this enabled service starts the server again automatically.
+#
+# ─── SETUP ────────────────────────────────────────────────────────────────────
+# 1. Adjust User=, WorkingDirectory=, ExecStart= below to match your Pi.
+#
+# 2. Install and enable the service:
+#      sudo cp aruco-camera.service /etc/systemd/system/
+#      sudo systemctl daemon-reload
+#      sudo systemctl enable --now aruco-camera
+#
+# 3. View live logs (including the [mem] CmaFree traces):
+#      journalctl -u aruco-camera -f
+#
+# 4. Enable the HARDWARE WATCHDOG so a full freeze auto-reboots (Layer 2):
+#      # a) confirm the watchdog device exists (present by default on recent Pi OS):
+#      ls -l /dev/watchdog
+#      #    if missing, add 'dtparam=watchdog=on' to /boot/firmware/config.txt & reboot
+#      # b) tell systemd to pet it, so a hang triggers a hardware reboot:
+#      sudo sed -i 's/^#\?RuntimeWatchdogSec=.*/RuntimeWatchdogSec=15/' /etc/systemd/system.conf
+#      sudo systemctl daemon-reexec
+#    Now if the kernel/system hangs for 15s, the board resets and boots back up
+#    with the camera server running again — no manual power-cycle.
+# ──────────────────────────────────────────────────────────────────────────────
+
+[Unit]
+Description=ArUco Pose high-res camera capture server
+After=network-online.target
+Wants=network-online.target
+# Never stop trying to restart, even after repeated rapid failures.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=????
+WorkingDirectory=/home/user/Aruco_Pose
+ExecStart=/usr/bin/python3 /home/user/Aruco_Pose/camera_capture_backend.py
+Restart=always
+RestartSec=5
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

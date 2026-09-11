@@ -1,0 +1,24 @@
+# PC-side Python dependencies — ArUco pose estimation, hand-eye calibration,
+# and the Flask UIs. Validated on Python 3.11.7 (Windows) in ./.venv.
+#
+# Setup:
+#   python -m venv .venv
+#   .venv\Scripts\pip install -r requirements.txt              (Windows)
+#   source .venv/bin/activate && pip install -r requirements.txt   (Linux/Mac)
+#
+# IMPORTANT — this file is for the PC / control machine only. The camera backends
+# (camera_capture_backend.py) run ON THE RASPBERRY PI and additionally need
+# picamera2 + libcamera, which ship as Pi system packages (apt), NOT pip. Do not
+# add them here — they will not install on a PC.
+
+# ── Core numeric / vision ─────────────────────────────────────────────────────
+numpy==2.4.4
+scipy==1.17.1                     # scipy.spatial.transform.Rotation (xArm RPY -> matrix)
+opencv-contrib-python==4.13.0.92  # cv2 + cv2.aruco (ArucoDetector / CharucoDetector).
+                                  # The 'contrib' build is what provides the aruco module.
+
+# ── Web UIs (flask_stream.py, camera_capture_flask.py) ────────────────────────
+Flask==3.1.3
+
+# ── Lite6 xArm control (hand_eye_calibration.py) ──────────────────────────────
+xarm-python-sdk==1.17.3

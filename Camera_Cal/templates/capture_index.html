@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Camera Capture</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 25px;
+            background-color: #2a2a2a;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            max-width: 854px;
+            width: 100%;
+        }
+
+        h1 { color: #ffffff; }
+
+        .preview-wrapper {
+            position: relative;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        #preview-img {
+            border: 3px solid #444;
+            border-radius: 8px;
+            max-width: 100%;
+            background-color: #000;
+            display: block;
+        }
+
+        .preview-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 5px;
+            padding: 4px 10px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .controls {
+            width: 100%;
+            background-color: #333;
+            padding: 25px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .count-box {
+            color: #ccc;
+            font-size: 15px;
+        }
+
+        .count-box span {
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 22px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover  { background-color: #45a049; }
+        button:active { background-color: #3d8b40; transform: scale(0.98); }
+        button:disabled { background-color: #555; color: #999; cursor: not-allowed; }
+
+        #status {
+            font-size: 14px;
+            text-align: center;
+            min-height: 20px;
+            color: #888;
+        }
+
+        .footer {
+            color: #666;
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calibration Capture</h1>
+
+        <div class="preview-wrapper">
+            <img id="preview-img" src="" width="854" height="480" alt="Camera preview">
+            <div class="preview-badge">
+                Preview: <span id="preview-status" style="color:#888">connecting...</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="info-row">
+                <div class="count-box">Images captured: <span id="image-count">—</span></div>
+            </div>
+            <div class="button-group">
+                <button id="capture-btn">Capture Calibration Image</button>
+                <button id="download-btn">Download All</button>
+            </div>
+            <div id="status"></div>
+        </div>
+
+        <div class="footer">Pi: 192.168.10.141:8000 &nbsp;|&nbsp; Preview: ~854×480 &nbsp;|&nbsp; Capture: ~2304×1296</div>
+    </div>
+
+    <script>
+        const PI_PREVIEW = 'http://192.168.10.141:8000/preview';
+
+        // ── Live preview polling ─────────────────────────────────────────────
+        const previewImg    = document.getElementById('preview-img');
+        const previewStatus = document.getElementById('preview-status');
+
+        function nextPreview() {
+            const tmp = new Image();
+            tmp.onload = function() {
+                previewImg.src = tmp.src;
+                previewStatus.textContent = 'live';
+                previewStatus.style.color = '#4CAF50';
+                setTimeout(nextPreview, 350);
+            };
+            tmp.onerror = function() {
+                previewStatus.textContent = 'offline';
+                previewStatus.style.color = '#FF6B6B';
+                setTimeout(nextPreview, 2000);
+            };
+            tmp.src = PI_PREVIEW + '?t=' + Date.now();
+        }
+        nextPreview();
+
+        // ── Image count ──────────────────────────────────────────────────────
+        const countEl = document.getElementById('image-count');
+
+        function refreshCount() {
+            fetch('/image_count')
+                .then(r => r.json())
+                .then(d => { countEl.textContent = d.count; })
+                .catch(() => {});
+        }
+        refreshCount();
+
+        // ── Capture button ───────────────────────────────────────────────────
+        const captureBtn = document.getElementById('capture-btn');
+        const statusEl   = document.getElementById('status');
+
+        captureBtn.addEventListener('click', function() {
+            captureBtn.disabled = true;
+            statusEl.textContent = 'Capturing...';
+            statusEl.style.color = '#FFD700';
+
+            fetch('/cal_image', { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        statusEl.textContent = 'Saved: ' + data.filename;
+                        statusEl.style.color = '#4CAF50';
+                        refreshCount();
+                    } else {
+                        statusEl.textContent = 'Error: ' + data.message;
+                        statusEl.style.color = '#FF6B6B';
+                    }
+                    captureBtn.disabled = false;
+                })
+                .catch(err => {
+                    statusEl.textContent = 'Error: ' + err.message;
+                    statusEl.style.color = '#FF6B6B';
+                    captureBtn.disabled = false;
+                });
+        });
+
+        // ── Download all button ──────────────────────────────────────────────
+        const downloadBtn = document.getElementById('download-btn');
+
+        downloadBtn.addEventListener('click', function() {
+            downloadBtn.disabled = true;
+            statusEl.textContent = 'Preparing ZIP...';
+            statusEl.style.color = '#FFD700';
+
+            fetch('/download_all')
+                .then(r => {
+                    if (!r.ok) throw new Error('No images or server error');
+                    return r.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a   = document.createElement('a');
+                    a.href = url;
+                    a.download = 'calibration_images.zip';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    statusEl.textContent = 'Download started.';
+                    statusEl.style.color = '#4CAF50';
+                    downloadBtn.disabled = false;
+                })
+                .catch(err => {
+                    statusEl.textContent = 'Error: ' + err.message;
+                    statusEl.style.color = '#FF6B6B';
+                    downloadBtn.disabled = false;
+                });
+        });
+    </script>
+</body>
+</html>
