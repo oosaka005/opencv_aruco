@@ -1,9 +1,9 @@
 > [!NOTE]
-> このリポジトリの現在のコード内容は、Renatoが共有してくれた
-> [`Renato-D/aruco_pickplace`](https://github.com/Renato-D/aruco_pickplace) の
-> commit [`8dc9792`](https://github.com/Renato-D/aruco_pickplace/commit/8dc97928f8fd861ac670f310795e01937ba88ed7) を、
-> この注記を除いてそのまま保持した共有用コピーです。今後、このコードをベースにしつつ、
-> `oosaka005`独自のコードを作成していく予定です。
+> The current code in this repository is an unchanged copy of
+> [`Renato-D/aruco_pickplace`](https://github.com/Renato-D/aruco_pickplace) at
+> commit [`8dc9792`](https://github.com/Renato-D/aruco_pickplace/commit/8dc97928f8fd861ac670f310795e01937ba88ed7),
+> shared by Renato. This repository is intended for sharing and reference. We plan to
+> develop original code based on this codebase in the future.
 
 # ArUco Vision-Guided Pick-and-Place (Lite6 xArm)
 
